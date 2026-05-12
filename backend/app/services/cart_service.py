@@ -4,6 +4,7 @@ from ..repositories.product_repository import ProductRepository
 from ..schemas.cart import CartResponse, CartItem, \
                             CartItemCreate, CartItemUpdate
 from fastapi import HTTPException, status
+from typing import cast
 
 
 class CartService:
@@ -60,16 +61,24 @@ class CartService:
 
         for product_id, quantity in cart_data.items():
             if product_id in products_dict:
-                product = products_dict[product_id]
-                subtotal = product.price * quantity
+                product = products_dict[product_id]  # type: ignore # теперь product определён
 
-                cart_item = CartItem(product_id=product.id, name=product.name,
-                    price=product.price, quantity=quantity, subtotal=subtotal,
-                    image_url=product.image_url)
+                price = cast(float, product.price)
+                qty = cast(int, quantity)
+                subtotal = price * qty
+
+                cart_item = CartItem(
+                    product_id=cast(int, product.id),
+                    name=cast(str, product.name),
+                    price=price,
+                    quantity=qty,
+                    subtotal=subtotal,
+                    image_url=cast(str, product.image_url)
+                )
 
                 cart_items.append(cart_item)
                 total_price += subtotal
-                total_items += quantity
+                total_items += qty
 
         return CartResponse(items=cart_items, total=round(total_price),
             items_count=total_items)
